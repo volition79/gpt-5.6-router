@@ -52,6 +52,14 @@ When executing, prefer the installed custom role if the active subagent tool exp
 
 If `spawn_agent` omits `agent_type`, `model`, or `reasoning_effort`, or Codex start/resume fails after enabling Multi-Agent V2, do not immediately classify the runtime as permanently incapable. During approved read-only discovery, read `references/runtime-troubleshooting.md` and check the active CLI/app versions, effective V2 settings, and exposed tool schema. Never print the whole config because it may contain secrets, and never edit global config without separate user approval. If a supported remediation plus restart/new thread still leaves model pinning unavailable, stop and report the capability gap instead of spawning.
 
+Classify runtime support before approved execution:
+
+- **A - full support**: `spawn_agent` exposes `agent_type`, `model`, `reasoning_effort`, and `fork_turns`. Continue only after a minimal explicit-model probe confirms the requested child model and reasoning effort when child metadata is observable.
+- **B - limited support**: spawning works but model or role pinning is unavailable or cannot be verified. Stop routing, report that model pinning is not trustworthy, and request approval for a configuration remediation. Never inherit Sol silently.
+- **C - request-wide failure**: the request is rejected before inference with the reserved `collaboration.spawn_agent` schema error. The skill cannot self-repair because it was not loaded. Use the install/recovery guidance in `references/runtime-troubleshooting.md`, then fully restart Codex and open a fresh thread.
+
+Use `fork_turns: "none"` by default for routed children. Send a narrow packet containing role, objective, required evidence, allowed write surface, non-goals, requested model, reasoning effort, validation, and output shape. Do not claim successful routing from a successful spawn alone; when observable metadata reports a different model, reasoning effort, role, or sandbox, stop and report the mismatch.
+
 Read `references/routing-policy.md` for capability floors and profile behavior. Read `references/execution-playbooks.md` for handoffs and integration.
 Read `references/runtime-troubleshooting.md` only when model/role overrides are missing, spawning fails, start/resume reports a multi-agent configuration error, or version drift could invalidate a known workaround.
 

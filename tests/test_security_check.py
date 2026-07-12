@@ -65,7 +65,7 @@ class SecurityCheckTests(unittest.TestCase):
         for name in ("README.md", "README.en.md"):
             path = root / name
             path.write_text(
-                path.read_text(encoding="utf-8").replace("git clone --branch v1.0.0 --depth 1", "git clone"),
+                path.read_text(encoding="utf-8").replace("git clone --branch v1.0.1 --depth 1", "git clone"),
                 encoding="utf-8",
             )
 
@@ -73,6 +73,19 @@ class SecurityCheckTests(unittest.TestCase):
 
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("installation pins release", result.stderr)
+
+    def test_missing_reserved_namespace_guidance_fails(self) -> None:
+        root = self.copy_repository()
+        runtime = root / "references/runtime-troubleshooting.md"
+        runtime.write_text(
+            runtime.read_text(encoding="utf-8").replace("issue #31864", "issue removed"),
+            encoding="utf-8",
+        )
+
+        result = self.run_check(root)
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("reserved namespace workaround documented", result.stderr)
 
 
 if __name__ == "__main__":

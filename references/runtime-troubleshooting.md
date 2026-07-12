@@ -5,6 +5,8 @@ Use this reference only after Gate 1 authorizes the necessary read-only discover
 ## Contents
 
 - Failure triage
+- Reserved `collaboration.spawn_agent` collision
+- Runtime support classification
 - Missing model, role, or reasoning parameters
 - V1 and V2 concurrency conflict
 - Spawn-time failures after parameters reappear
@@ -19,6 +21,61 @@ Use this reference only after Gate 1 authorizes the necessary read-only discover
 4. Compare behavior with the current official release, its tagged source, current `main`, and current Codex subagent documentation.
 5. Propose the narrowest reversible remediation. Editing `~/.codex/config.toml`, restarting Codex, or changing the approved route requires the applicable user approval.
 6. After restart, use a fresh thread and a minimal `fork_turns: "none"` probe with an explicit model and reasoning effort. A successful tool call proves that the override path was accepted; inspect child metadata when available before claiming the backend actually used that model.
+
+## Reserved `collaboration.spawn_agent` Collision
+
+Codex issue #31864 documents a GPT-5.6 Sol failure where every request is rejected before inference because the model-reserved `collaboration.spawn_agent` schema conflicts with Codex's independently generated Multi-Agent V2 schema. Prompt instructions such as "do not use subagents" cannot help because the model never receives the prompt.
+
+Recognize this exact class by the error:
+
+```text
+Invalid Value: 'tools'. Function 'collaboration.spawn_agent' is reserved for use by this model and must match the configured schema.
+```
+
+For affected versions, merge this configuration into existing tables rather than duplicating TOML table headers:
+
+```toml
+[features.multi_agent_v2]
+enabled = true
+hide_spawn_agent_metadata = false
+tool_namespace = "agents"
+max_concurrent_threads_per_session = 4
+
+[agents]
+max_depth = 1
+interrupt_message = true
+```
+
+Do not set `agents.max_threads` while V2 is active. Back up the active config and obtain approval before editing it. Check both the user-global and project-local config:
+
+- Windows: `%USERPROFILE%\.codex\config.toml`
+- macOS: `~/.codex/config.toml`
+- WSL/Linux: `~/.codex/config.toml`
+- Project override: `<project>/.codex/config.toml`
+
+After any change, fully quit Codex, reopen it, and start a new thread. Do not reuse a thread that was created with the old tool schema. CLI and Desktop may bundle different runtimes, so validate the surface that will execute the task.
+
+## Runtime Support Classification
+
+Classify the active surface before routing:
+
+- **A - full support**: `spawn_agent` exposes `agent_type`, `model`, `reasoning_effort`, and `fork_turns`. Run a minimal read-only probe and verify child metadata when available.
+- **B - limited support**: spawning works but model or role pinning is absent or unverifiable. Stop and request approval for remediation; do not silently use the parent model.
+- **C - request-wide failure**: the reserved-schema error occurs before inference. Recover outside the failed thread using the namespace setting above, restart completely, and create a fresh thread.
+
+Minimal probe:
+
+```json
+{
+  "fork_turns": "none",
+  "agent_type": "default",
+  "model": "gpt-5.6-terra",
+  "reasoning_effort": "medium",
+  "message": "Read-only: report the current working-directory state only."
+}
+```
+
+Inspect the actual child model, reasoning effort, role, and sandbox when the runtime exposes them. A request for Terra medium that runs as Sol high is a failed routing probe even when `spawn_agent` returned successfully.
 
 Useful read-only checks:
 
@@ -141,3 +198,4 @@ Checked 2026-07-11:
 - Model override/metadata drift, issue #15177: https://github.com/openai/codex/issues/15177
 - Encrypted V2 schema failure, issue #26753: https://github.com/openai/codex/issues/26753
 - V2/custom-agent config precedence report, issue #31097: https://github.com/openai/codex/issues/31097
+- Reserved `collaboration.spawn_agent` collision, issue #31864: https://github.com/openai/codex/issues/31864
