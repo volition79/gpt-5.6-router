@@ -91,12 +91,12 @@ Invalid Value: 'tools'. Function 'collaboration.spawn_agent' is reserved for use
 터미널에서 다음 명령을 실행합니다.
 
 ```bash
-git clone --branch v1.0.0 --depth 1 \
+git clone --branch v1.0.1 --depth 1 \
   https://github.com/volition79/gpt-5.6-router.git \
   "${CODEX_HOME:-$HOME/.codex}/skills/gpt56-model-router"
 ```
 
-이 명령은 검토된 `v1.0.0` 릴리스에 설치본을 고정합니다. 설치 결과가 정확한 태그인지 확인합니다.
+이 명령은 예약 도구 충돌 해결이 포함된 검토된 `v1.0.1` 릴리스에 설치본을 고정합니다. 설치 결과가 정확한 태그인지 확인합니다.
 
 ```bash
 git -C "${CODEX_HOME:-$HOME/.codex}/skills/gpt56-model-router" status --short

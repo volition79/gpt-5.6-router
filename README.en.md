@@ -92,12 +92,12 @@ Official Codex issue [#31864](https://github.com/openai/codex/issues/31864) reco
 Run:
 
 ```bash
-git clone --branch v1.0.0 --depth 1 \
+git clone --branch v1.0.1 --depth 1 \
   https://github.com/volition79/gpt-5.6-router.git \
   "${CODEX_HOME:-$HOME/.codex}/skills/gpt56-model-router"
 ```
 
-This pins the installation to the reviewed `v1.0.0` release. Verify that the installed HEAD matches the exact tag:
+This pins the installation to the reviewed `v1.0.1` release containing the reserved-tool collision fix. Verify that the installed HEAD matches the exact tag:
 
 ```bash
 git -C "${CODEX_HOME:-$HOME/.codex}/skills/gpt56-model-router" status --short

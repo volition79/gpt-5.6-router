@@ -65,7 +65,7 @@ class SecurityCheckTests(unittest.TestCase):
         for name in ("README.md", "README.en.md"):
             path = root / name
             path.write_text(
-                path.read_text(encoding="utf-8").replace("git clone --branch v1.0.0 --depth 1", "git clone"),
+                path.read_text(encoding="utf-8").replace("git clone --branch v1.0.1 --depth 1", "git clone"),
                 encoding="utf-8",
             )
 
