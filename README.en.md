@@ -2,6 +2,15 @@
 
 [한국어](README.md)
 
+> [!IMPORTANT]
+> In some Codex CLI and Codex Desktop environments, GPT-5.6 Sol can collide with
+> the Multi-Agent V2 `collaboration.spawn_agent` contract and reject every turn
+> before model execution.
+>
+> Do not set `hide_spawn_agent_metadata = false` by itself. Merge the complete
+> configuration block below, including `tool_namespace = "agents"`, then fully
+> quit Codex and start a new session.
+
 A Codex skill that assigns work stages to GPT-5.6 Sol, Terra, and Luna according to their strengths. The user selects `PERFORMANCE`, `BALANCED`, or `TOKEN_SAVER`; the skill separates read-only discovery from execution approval and then proposes an adaptive model route.
 
 This skill activates **only when explicitly invoked**.
@@ -28,6 +37,55 @@ This skill activates **only when explicitly invoked**.
 If model pinning is unavailable, the skill stops instead of silently substituting another model.
 
 ## Installation
+
+### Required Multi-Agent V2 preflight
+
+Cloning the skill repository does not prove that the runtime can pin Terra or Luna. Check the runtime that will actually execute the task:
+
+```bash
+codex --version
+codex features list
+```
+
+Configuration locations:
+
+- Windows: `%USERPROFILE%\.codex\config.toml`
+- macOS: `~/.codex/config.toml`
+- WSL/Linux: `~/.codex/config.toml`
+- Project override: `<project>/.codex/config.toml`
+
+If a global change does not fix the problem, inspect the project override and the Codex Desktop bundled runtime. Never print the complete config because it may contain credentials; inspect only relevant keys.
+
+Do not apply this incomplete configuration:
+
+```toml
+[features.multi_agent_v2]
+hide_spawn_agent_metadata = false
+```
+
+Use the following values as one set on affected runtimes. If either TOML table already exists, merge missing keys into that table instead of creating a duplicate table. Backups and configuration edits require user approval.
+
+```toml
+[features.multi_agent_v2]
+enabled = true
+hide_spawn_agent_metadata = false
+tool_namespace = "agents"
+max_concurrent_threads_per_session = 4
+
+[agents]
+max_depth = 1
+interrupt_message = true
+```
+
+Do not combine `[agents] max_threads` with active V2. Fully quit Codex after changing config and start a new session instead of resuming the old conversation.
+
+When this error appears, check the namespace before reinstalling:
+
+```text
+Invalid Value: 'tools'. Function 'collaboration.spawn_agent' is reserved for use by this model and must match the configured schema.
+```
+
+Official Codex issue [#31864](https://github.com/openai/codex/issues/31864) records `tool_namespace = "agents"` as the workaround for the reserved-name collision.
 
 ### Install globally for a Codex user
 

@@ -2,6 +2,14 @@
 
 [English](README.en.md)
 
+> [!IMPORTANT]
+> 일부 Codex CLI 및 Codex Desktop 환경에서는 GPT-5.6 Sol과 Multi-Agent V2의
+> `collaboration.spawn_agent` 도구 규격이 충돌해 모든 요청이 모델 실행 전에 실패할 수 있습니다.
+>
+> `hide_spawn_agent_metadata = false`만 단독으로 설정하지 마세요. 영향을 받는 환경에서는
+> `tool_namespace = "agents"`를 포함한 아래의 전체 설정 블록을 기존 설정에 병합한 뒤,
+> Codex를 완전히 종료하고 새 세션을 시작하세요.
+
 GPT-5.6 Sol, Terra, Luna의 강점을 작업 단계별로 배치하는 Codex 스킬입니다. 사용자가 직접 팀을 설계하지 않아도 `PERFORMANCE`, `BALANCED`, `TOKEN_SAVER` 중 목표를 선택하고, 읽기 전용 조사와 실행 승인을 분리한 뒤 적합한 모델 경로를 제안합니다.
 
 이 스킬은 **명시적으로 호출할 때만** 활성화됩니다.
@@ -28,6 +36,55 @@ GPT-5.6 Sol, Terra, Luna의 강점을 작업 단계별로 배치하는 Codex 스
 모델 고정 기능이 없는 런타임에서는 다른 모델로 조용히 대체하지 않고 중단하도록 설계되어 있습니다.
 
 ## 설치
+
+### Multi-Agent V2 필수 사전 점검
+
+스킬 저장소를 복제하는 것만으로는 Terra와 Luna 모델 지정이 보장되지 않습니다. 먼저 실제 작업에 사용되는 런타임을 확인합니다.
+
+```bash
+codex --version
+codex features list
+```
+
+설정 파일 위치는 다음과 같습니다.
+
+- Windows: `%USERPROFILE%\.codex\config.toml`
+- macOS: `~/.codex/config.toml`
+- WSL/Linux: `~/.codex/config.toml`
+- 프로젝트별 설정: `프로젝트폴더/.codex/config.toml`
+
+전역 설정을 고쳤는데도 문제가 계속되면 프로젝트별 설정과 Codex Desktop의 내장 런타임도 확인합니다. 설정 파일 전체에는 인증정보가 포함될 수 있으므로 출력하지 말고, 관련 키만 확인합니다.
+
+다음처럼 한 줄만 추가하는 설정은 사용하지 않습니다.
+
+```toml
+[features.multi_agent_v2]
+hide_spawn_agent_metadata = false
+```
+
+영향받는 런타임에서는 아래 블록을 하나의 세트로 사용합니다. 이미 같은 TOML 구역이 있으면 제목을 중복 생성하지 말고 누락된 키만 기존 구역에 병합합니다. 변경 전 백업과 설정 변경에는 사용자 승인이 필요합니다.
+
+```toml
+[features.multi_agent_v2]
+enabled = true
+hide_spawn_agent_metadata = false
+tool_namespace = "agents"
+max_concurrent_threads_per_session = 4
+
+[agents]
+max_depth = 1
+interrupt_message = true
+```
+
+V2가 활성화된 상태에서는 `[agents] max_threads`를 함께 설정하지 않습니다. 설정 후 Codex를 완전히 종료하고 기존 대화를 재개하지 않은 채 새 세션을 시작합니다.
+
+다음 오류가 나오면 재설치보다 네임스페이스 설정을 먼저 확인합니다.
+
+```text
+Invalid Value: 'tools'. Function 'collaboration.spawn_agent' is reserved for use by this model and must match the configured schema.
+```
+
+공식 Codex 이슈 [#31864](https://github.com/openai/codex/issues/31864)는 `tool_namespace = "agents"`로 예약 이름 충돌을 피하는 우회 방법을 기록합니다.
 
 ### Codex 사용자 전역 설치
 
